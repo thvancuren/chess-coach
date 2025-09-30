@@ -1,0 +1,69 @@
+# Environment files
+.env
+.env.local
+.env.production
+.env.development
+
+# Python virtual environments
+apps/backend/venv/
+venv/
+env/
+
+# Node modules and build artifacts
+apps/frontend/node_modules/
+apps/frontend/.next/
+apps/frontend/out/
+apps/frontend/build/
+node_modules/
+
+# Stockfish binaries and downloads
+engines/stockfish/**
+!engines/stockfish/.gitkeep
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+chesscoach.db
+
+# Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Data directories (may contain large files)
+data/

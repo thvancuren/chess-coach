@@ -301,10 +301,10 @@ export default function SparringPage() {
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-slate-900 mb-4">Tips</h2>
             <div className="space-y-2 text-sm text-slate-600">
-              <p>• The bot will adapt to your playing style</p>
-              <p>• Higher difficulty means stronger play</p>
-              <p>• Use this to practice specific openings</p>
-              <p>• Analyze your games afterward</p>
+              <p>&bull; The bot will adapt to your playing style</p>
+              <p>&bull; Higher difficulty means stronger play</p>
+              <p>&bull; Use this to practice specific openings</p>
+              <p>&bull; Analyze your games afterward</p>
             </div>
           </div>
         </div>

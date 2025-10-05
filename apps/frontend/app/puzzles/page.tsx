@@ -106,7 +106,10 @@ export default function PuzzlesPage() {
   }
 
   const getStrengthStars = (strength: number) => {
-    return '★'.repeat(strength) + '☆'.repeat(5 - strength)
+    const safeStrength = Math.max(0, Math.min(5, strength))
+    const filled = '\u2605'.repeat(safeStrength)
+    const empty = '\u2606'.repeat(5 - safeStrength)
+    return `${filled}${empty}`
   }
 
   if (isLoading) {
@@ -290,4 +293,3 @@ export default function PuzzlesPage() {
     </div>
   )
 }
-

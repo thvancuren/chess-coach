@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Play, Pause, RotateCcw, BarChart3 } from 'lucide-react'
+import { ArrowLeft, Play, Pause, RotateCcw, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react'
 import ChessBoard from '@/components/ChessBoard'
 import EvalGraph from '@/components/EvalGraph'
+import EvalBar from '@/components/EvalBar'
 
 interface Move {
   id: string
@@ -80,6 +81,18 @@ export default function GameDetailPage() {
     setIsPlaying(false)
   }
 
+  const handlePreviousMove = () => {
+    if (currentMove > 0) {
+      setCurrentMove(currentMove - 1)
+    }
+  }
+
+  const handleNextMove = () => {
+    if (game && currentMove < game.moves.length) {
+      setCurrentMove(currentMove + 1)
+    }
+  }
+
   const getEvalData = () => {
     if (!game) return []
     return game.moves.map((move, index) => ({
@@ -100,6 +113,70 @@ export default function GameDetailPage() {
   const getCurrentMove = () => {
     if (!game || currentMove === 0) return null
     return game.moves[currentMove - 1]
+  }
+
+  const getLastMove = () => {
+    if (!game || currentMove === 0) return null
+    const move = game.moves[currentMove - 1]
+    if (!move) return null
+    
+    // Try to parse move notation to get from/to squares
+    // This is a simplified parser - we'll use common patterns
+    const moveText = move.san
+    
+    // Remove check/checkmate symbols
+    const cleanMove = moveText.replace(/[+#]/, '')
+    
+    // Handle castling
+    if (cleanMove === 'O-O' || cleanMove === '0-0') {
+      // Kingside castling
+      const isBlack = currentMove % 2 === 0
+      return isBlack ? { from: 'e8', to: 'g8' } : { from: 'e1', to: 'g1' }
+    }
+    if (cleanMove === 'O-O-O' || cleanMove === '0-0-0') {
+      // Queenside castling
+      const isBlack = currentMove % 2 === 0
+      return isBlack ? { from: 'e8', to: 'c8' } : { from: 'e1', to: 'c1' }
+    }
+    
+    // Handle captures (e.g., "exd5", "Nxe5")
+    if (cleanMove.includes('x')) {
+      const parts = cleanMove.split('x')
+      if (parts.length === 2) {
+        const to = parts[1].slice(0, 2)
+        if (to.length === 2 && /^[a-h][1-8]$/.test(to)) {
+          // For captures, we need to guess the from square
+          // This is simplified - in reality we'd need the full move data
+          const piece = parts[0].charAt(0)
+          if (piece === piece.toLowerCase()) {
+            // Pawn capture (e.g., "exd5")
+            const fromFile = parts[0].slice(-1)
+            const toRank = to[1]
+            const fromRank = currentMove % 2 === 0 ? parseInt(toRank) - 1 : parseInt(toRank) + 1
+            const from = fromFile + fromRank
+            if (/^[a-h][1-8]$/.test(from)) {
+              return { from, to }
+            }
+          }
+        }
+      }
+    }
+    
+    // Handle regular moves (e.g., "e4", "Nf3", "Bc4")
+    if (/^[a-h][1-8]$/.test(cleanMove)) {
+      // Pawn move
+      const to = cleanMove
+      const fromFile = to[0]
+      const toRank = parseInt(to[1])
+      const fromRank = currentMove % 2 === 0 ? toRank - 1 : toRank + 1
+      const from = fromFile + fromRank
+      if (/^[a-h][1-8]$/.test(from)) {
+        return { from, to }
+      }
+    }
+    
+    // For other moves, return null to avoid incorrect arrows
+    return null
   }
 
   if (isLoading) {
@@ -128,7 +205,7 @@ export default function GameDetailPage() {
     <div className="max-w-7xl mx-auto">
       <div className="mb-6">
         <Link
-          href="/games"
+          href={`/games?username=${game.username}`}
           className="inline-flex items-center text-slate-600 hover:text-slate-900 mb-4"
         >
           <ArrowLeft className="mr-2" size={16} />
@@ -141,6 +218,11 @@ export default function GameDetailPage() {
               <h1 className="text-2xl font-bold text-slate-900 mb-2">
                 {game.white} vs {game.black}
               </h1>
+              <div className="text-sm text-slate-600 mb-2">
+                You played as: <span className="font-medium text-slate-900">
+                  {game.white === game.username ? 'White' : 'Black'}
+                </span>
+              </div>
               <div className="flex items-center space-x-4 text-sm text-slate-600">
                 <span>{game.eco || 'N/A'}</span>
                 <span>•</span>
@@ -152,6 +234,20 @@ export default function GameDetailPage() {
               </div>
             </div>
             <div className="flex items-center space-x-2">
+              <button
+                onClick={handlePreviousMove}
+                disabled={currentMove === 0}
+                className="bg-slate-600 text-white px-3 py-2 rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                onClick={handleNextMove}
+                disabled={currentMove >= game.moves.length}
+                className="bg-slate-600 text-white px-3 py-2 rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRight size={16} />
+              </button>
               <button
                 onClick={handlePlayPause}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
@@ -175,12 +271,27 @@ export default function GameDetailPage() {
         <div className="lg:col-span-2">
           <div className="bg-white rounded-lg shadow p-6 mb-6">
             <h2 className="text-lg font-semibold text-slate-900 mb-4">Chess Board</h2>
+            
+            {/* Evaluation bar above the board */}
+            <div className="mb-6">
+              <EvalBar
+                evaluation={getCurrentMove()?.sf_eval_cp || null}
+                mate={getCurrentMove()?.sf_mate || null}
+                isWhiteToMove={currentMove % 2 === 0}
+                whitePlayer={game.white || undefined}
+                blackPlayer={game.black || undefined}
+              />
+            </div>
+            
             <div className="flex justify-center">
               <ChessBoard
                 position={getCurrentPosition()}
                 onMoveClick={handleMoveClick}
                 currentMove={currentMove}
                 totalMoves={game.moves.length}
+                lastMove={getLastMove()}
+                whitePlayer={game.white || undefined}
+                blackPlayer={game.black || undefined}
               />
             </div>
           </div>
